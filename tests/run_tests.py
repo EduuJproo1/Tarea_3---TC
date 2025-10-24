@@ -8,7 +8,7 @@ import os
 import sys
 sys.path.append('..')
 
-from lexer_parser_fortran_subset import Lexer, Parser, print_ast
+from lexer_parser_fortran import Lexer, Parser, print_ast
 
 TEST_DIR = os.path.dirname(__file__)
 
