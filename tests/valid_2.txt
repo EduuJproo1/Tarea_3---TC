@@ -1,0 +1,8 @@
+! Programa de ejemplo
+A = 10
+B = 5
+IF (A > B) THEN
+  C = A / B
+ELSE
+  C = 0
+ENDIF
