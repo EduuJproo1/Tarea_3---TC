@@ -4,10 +4,7 @@
 # ---------------------------------------------------------
 
 from graphviz import Digraph
-
-# Importa las clases de AST
 from ast_nodes import Program, Assign, If, BinOp, Number, Var
-
 
 def visualize_ast(node, filename='ast'):
     """

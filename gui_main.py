@@ -85,7 +85,6 @@ class FortranAnalyzerGUI:
         self.status_label.config(text="Listo.")
         self.last_ast_path = None
 
-
 if __name__ == "__main__":
     root = tk.Tk()
     app = FortranAnalyzerGUI(root)

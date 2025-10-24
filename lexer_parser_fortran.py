@@ -10,34 +10,39 @@ Token = namedtuple('Token', ['type', 'value', 'line', 'col'])
 # ---------- Lexer ----------
 class Lexer:
     token_spec = [
-        ('NUMBER',   r'\d+(\.\d+)?'),
-        ('ID',       r'[A-Za-z_][A-Za-z0-9_]*'),
-        ('RELOP',    r'<=|>=|==|/=|<|>'),
-        ('ASSIGN',   r'='),
-        ('PLUS',     r'\+'),
-        ('MINUS',    r'-'),
-        ('MUL',      r'\*'),
-        ('DIV',      r'/'),
-        ('LPAREN',   r'\('),
-        ('RPAREN',   r'\)'),
-        ('NEWLINE',  r'\n'),
-        ('SKIP',     r'[ \t\r]+'),
-        ('COMMENT',  r'\!.*'),        # from '!' to end of line
-        ('MISMATCH', r'.'),
+        ('NUMBER',   r'\d+(\.\d+)?'),             # Números (enteros o decimales)
+        ('ID',       r'[A-Za-z_][A-Za-z0-9_]*'),  # Identificadores y palabras clave
+        ('RELOP',    r'<=|>=|==|/=|<|>'),         # Operadores relacionales
+        ('ASSIGN',   r'='),                       # Asignación
+        ('PLUS',     r'\+'),                      # Suma
+        ('MINUS',    r'-'),                       # Resta
+        ('MUL',      r'\*'),                      # Multiplicación
+        ('DIV',      r'/'),                       # División
+        ('LPAREN',   r'\('),                      # Paréntesis izquierdo
+        ('RPAREN',   r'\)'),                      # Paréntesis derecho
+        ('NEWLINE',  r'\n'),                      # Salto de línea
+        ('SKIP',     r'[ \t\r]+'),                # Ignorar espacios, tabs, retornos
+        ('COMMENT',  r'\!.*'),                    # Comentarios (inician con !)
+        ('MISMATCH', r'.'),                       # 'MISMATCH' debe ir al final para capturar cualquier caracter inesperado
     ]
+
+    # Compila todas las expresiones regulares en una sola
     master_re = re.compile('|'.join('(?P<%s>%s)' % pair for pair in token_spec))
 
+    # Palabras clave que el 'ID' debe diferenciar
     keywords = {'IF','THEN','ELSE','ENDIF'}
 
     def __init__(self, text):
+        # Constructor: inicializa el lexer y lanza el proceso de tokenización
         self.text = text
         self.line = 1
         self.col = 1
         self.pos = 0
         self.tokens = []
-        self._tokenize()
+        self._tokenize()   # Llama al método que genera los tokens
 
     def _tokenize(self):
+        # Método principal que procesa el texto y genera la lista de tokens
         for mo in self.master_re.finditer(self.text):
             kind = mo.lastgroup
             val = mo.group(kind)
@@ -45,6 +50,7 @@ class Lexer:
                 tok = Token('NUMBER', val, self.line, self.col)
                 self.tokens.append(tok)
             elif kind == 'ID':
+                # Si es un ID, verifica si es una palabra clave (IF, THEN, etc.)
                 up = val.upper()
                 if up in self.keywords:
                     tok = Token(up, up, self.line, self.col)
@@ -52,23 +58,29 @@ class Lexer:
                     tok = Token('ID', val, self.line, self.col)
                 self.tokens.append(tok)
             elif kind in ('RELOP','ASSIGN','PLUS','MINUS','MUL','DIV','LPAREN','RPAREN'):
+                # Tokens simples de operadores y paréntesis
                 tok = Token(kind, val, self.line, self.col)
                 self.tokens.append(tok)
             elif kind == 'NEWLINE':
+                # Actualiza el contador de líneas
                 self.line += 1
                 self.col = 0
             elif kind in ('SKIP','COMMENT'):
                 pass
             elif kind == 'MISMATCH':
+                # Si es MISMATCH, es un error léxico
                 raise SyntaxError(f'Unexpected character {val!r} at line {self.line} col {self.col}')
+            # Actualiza la columna (posición del caracter en la línea)
             self.col += len(val)
+        # Añade el token de Fin de Archivo (End of File)
         self.tokens.append(Token('EOF', '', self.line, self.col))
 
     def __iter__(self):
         return iter(self.tokens)
 
-# ---------- Parser (LL(1) recursive descent) ----------
+# ---------- Analizador Sintáctico (Parser) ----------
 class Parser:
+    # Implementa el parser de descenso recursivo
     def __init__(self, tokens):
         self.tokens = tokens
         self.pos = 0
@@ -81,6 +93,7 @@ class Parser:
         else:
             raise SyntaxError(f'Expected {tok_type} but got {self.cur.type} at line {self.cur.line} col {self.cur.col}')
 
+    # --- Métodos del Parser (basados en la Gramática) ---
     def parse(self):
         stmts = self.stmt_list()
         if self.cur.type != 'EOF':
@@ -131,7 +144,6 @@ class Parser:
         right = self.expr()
         return BinOp(left, op, right)
 
-    # Expression parsing (precedence: term ((+|-) term)* )
     def expr(self):
         node = self.term()
         while self.cur.type in ('PLUS','MINUS'):
@@ -167,7 +179,7 @@ class Parser:
         else:
             raise SyntaxError(f'Unexpected factor {self.cur}')
 
-# ---------- Utility: pretty print AST ----------
+# ---------- Funciones Auxiliares ----------
 def print_ast(node, indent=0):
     pad = '  '*indent
     if isinstance(node, Program):
@@ -195,20 +207,3 @@ def print_ast(node, indent=0):
         print(pad + f"Var({node.name})")
     else:
         print(pad + f"Unknown node: {node}")
-
-# ---------- Example usage ----------
-if __name__ == '__main__':
-    sample = '''
-    ! ejemplo
-    A = 2 + 3 * (4 - 1)
-    IF (A > 5) THEN
-      B = A * 2
-    ELSE
-      B = 0
-    ENDIF
-    '''
-    lx = Lexer(sample)
-    parser = Parser(list(lx))
-    ast = parser.parse()
-    print_ast(ast)
-    visualize_ast(ast, 'fortran_ast')
