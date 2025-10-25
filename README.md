@@ -65,17 +65,10 @@ El script `run_tests.py` buscará todos los archivos `.txt` en el directorio, lo
 
 ## 📁 Estructura del Proyecto
 
-```
-Aquí tienes la estructura correcta del proyecto, reflejando que los tests están dentro de su propia carpeta:
-
------
-
-## 📁 Estructura del Proyecto
-
-```
+```text
 .
 ├── gui_main.py                    # Punto de entrada (interfaz gráfica)
-├── lexer_parser_fortran.py # Analizador léxico y parser recursivo
+├── lexer_parser_fortran.py        # Analizador léxico y parser recursivo
 ├── ast_nodes.py                   # Clases para los nodos del AST
 ├── ast_visualizer.py              # Genera la imagen del AST con Graphviz
 ├── tests/                         # Carpeta de pruebas
